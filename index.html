@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DATA TERMINAL - NHẬP LIỆU TRỰC QUAN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00e5ff;
+            --secondary: #9d4edd;
+            --success: #00cc66;
+            --danger: #ff3366;
+            --bg-dark: #0b132b;
+            --glass: rgba(20, 30, 60, 0.8);
+            --gold-rank: #ffc107;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; user-select: none; }
+        body { background: linear-gradient(135deg, var(--bg-dark), #1c2541); color: white; min-height: 100vh; overflow-x: hidden; }
+
+        /* MÀN HÌNH ĐĂNG NHẬP */
+        #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 20px; }
+        .logo { font-size: 2.5rem; font-weight: 900; color: var(--primary); text-shadow: 0 0 20px var(--primary); margin-bottom: 30px; text-align: center;}
+        .login-box { background: var(--glass); padding: 40px; border: 2px solid var(--primary); border-radius: 15px; text-align: center; width: 100%; max-width: 400px; box-shadow: 0 0 30px rgba(0, 229, 255, 0.2); }
+        .login-box input { width: 100%; padding: 15px; font-size: 1.2rem; font-weight: 700; text-align: center; border-radius: 8px; border: none; margin-bottom: 20px; outline: none; }
+        .login-box input:focus { box-shadow: 0 0 15px var(--primary); }
+        .btn { padding: 15px; width: 100%; font-size: 1.2rem; font-weight: 900; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.3s; color: white; }
+        .btn-connect { background: linear-gradient(90deg, var(--primary), #0077b6); box-shadow: 0 5px 15px rgba(0, 229, 255, 0.4); }
+        .btn-connect:active { transform: scale(0.95); }
+
+        /* MÀN HÌNH APP */
+        #app-screen { display: none; padding: 15px; max-width: 800px; margin: 0 auto; padding-bottom: 80px;}
+        .header-bar { display: flex; justify-content: space-between; background: rgba(0,0,0,0.4); padding: 15px; border-bottom: 2px solid var(--primary); border-radius: 10px; margin-bottom: 20px; font-weight: 800; }
+        
+        /* BẢNG DỮ LIỆU */
+        .table-container { background: var(--glass); border: 2px solid var(--secondary); border-radius: 12px; overflow-x: auto; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(157, 78, 221, 0.2); }
+        table { width: 100%; border-collapse: collapse; text-align: center; min-width: 500px;}
+        th { background: rgba(157, 78, 221, 0.3); color: var(--primary); padding: 15px 5px; font-size: 0.9rem; font-weight: 900; text-transform: uppercase; }
+        td { padding: 12px 5px; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; cursor: pointer; transition: 0.3s; vertical-align: middle;}
+        
+        /* Ô NHẬP LIỆU BÊN TRONG BẢNG (INLINE EDIT) */
+        td input { width: 100%; padding: 10px 5px; background: rgba(0,0,0,0.6); border: 1px solid var(--primary); color: white; font-size: 1rem; font-weight: 700; border-radius: 6px; text-align: center; outline: none; font-family: inherit;}
+        td.text-left input { text-align: left; padding-left: 10px;}
+        td input:focus { border-color: var(--gold-rank); box-shadow: 0 0 10px rgba(255, 193, 7, 0.5); background: rgba(0,0,0,0.8);}
+
+        /* HIỆU ỨNG TƯƠNG TÁC 3D */
+        tr:hover td { background: rgba(255,255,255,0.05); }
+        tr.selected td { background: rgba(0, 229, 255, 0.2); color: var(--primary); font-weight: 900; box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.5); }
+        tr.editing td { background: rgba(255, 193, 7, 0.1); box-shadow: inset 0 0 15px rgba(255, 193, 7, 0.2); }
+        tr.updated td { animation: flashGreen 1s ease; }
+        tr.deleted td { animation: fadeOut 0.5s forwards; }
+        tr.added td { animation: slideUp 0.8s ease; color: var(--success); font-weight: 900;}
+
+        @keyframes flashGreen { 0% { background: rgba(0,204,102,0.8); color: white;} 100% { background: transparent; } }
+        @keyframes fadeOut { 100% { opacity: 0; transform: translateX(50px); display: none; } }
+        @keyframes slideUp { 0% { opacity: 0; transform: translateY(20px); background: rgba(0,204,102,0.5); } 100% { opacity: 1; transform: translateY(0); } }
+
+        /* THANH CÔNG CỤ */
+        .tools { display: flex; gap: 10px; }
+        .btn-tool { flex: 1; padding: 15px 5px; font-size: 1rem; background: rgba(255,255,255,0.1); border: 2px solid; border-radius: 10px; color: white; font-weight: 800; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; transition: 0.2s;}
+        .btn-edit { border-color: var(--gold-rank); color: var(--gold-rank); }
+        .btn-del { border-color: var(--danger); color: var(--danger); }
+        .btn-add { border-color: var(--primary); color: var(--primary); }
+        
+        .btn-tool:active { transform: scale(0.95); }
+        .btn-save { background: var(--success) !important; color: white !important; border-color: var(--success) !important; box-shadow: 0 0 15px rgba(0,204,102,0.5);}
+
+        /* HỆ THỐNG TOAST THÔNG BÁO */
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--success); color: white; font-weight: 800; padding: 15px 30px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,204,102,0.4); opacity: 0; transition: 0.3s; z-index: 1000; pointer-events: none; text-align: center; width: 90%; max-width: 400px;}
+        #toast.show { opacity: 1; transform: translate(-50%, 10px); }
+    </style>
+</head>
+<body>
+    <div id="toast">Thông báo</div>
+
+    <div id="login-screen">
+        <div class="logo">PHIẾU DATA 1<br>BẢO TRÌ MÁY CHỦ</div>
+        <div class="login-box">
+            <input type="text" id="guild-name" placeholder="NHẬP TÊN BANG HỘI" autocomplete="off">
+            <button class="btn btn-connect" onclick="login()">KẾT NỐI MÁY CHỦ</button>
+        </div>
+    </div>
+
+    <div id="app-screen">
+        <div class="header-bar">
+            <span id="guild-display" style="color:var(--primary)">[BANG HỘI]</span>
+            <span style="color:#ffc107">YÊU CẦU: 3 LỆNH</span>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th width="10%">STT</th>
+                        <th width="40%" style="text-align:left">HỌ VÀ TÊN</th>
+                        <th width="16%">TX</th>
+                        <th width="17%">GK</th>
+                        <th width="17%">CK</th>
+                    </tr>
+                </thead>
+                <tbody id="data-body"></tbody>
+            </table>
+        </div>
+
+        <div class="tools">
+            <button id="btn-edit" class="btn-tool btn-edit" onclick="execEdit()">✏️ SỬA<br><span style="font-size:0.75rem; font-weight:400">Chọn 1 dòng</span></button>
+            <button id="btn-del" class="btn-tool btn-del" onclick="execDelete()">🗑️ XÓA<br><span style="font-size:0.75rem; font-weight:400">Chọn 1 dòng</span></button>
+            <button id="btn-add" class="btn-tool btn-add" onclick="execAdd()">➕ THÊM<br><span style="font-size:0.75rem; font-weight:400">Bản ghi mới</span></button>
+        </div>
+    </div>
+
+    <script>
+        // Dán link Google Apps Script (Deploy mới nhất) của cô vào đây
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyvd8OkBNz1mnCViqK_FNQErlEMQBgn1eHGvlME4VoK2FXv2-IYPHkeMthKh71KUacFsg/exec"; 
+
+        let guildName = "";
+        let selectedId = null;
+        let currentMode = 'view'; // Các trạng thái: 'view', 'edit', 'add'
+
+        // Dữ liệu ban đầu (Có Trần Văn Giao)
+        let dataList = [
+            { id: 1, name: "Dương Hồng Anh", tx: "8, 7, 7", gk: "9", ck: "8" },
+            { id: 2, name: "Lương Việt Anh", tx: "5, 6, 5", gk: "5", ck: "5" },
+            { id: 3, name: "Nguyễn Kì Duyên", tx: "7, 8, 0", gk: "10", ck: "9" },
+            { id: 4, name: "Trần Văn Giao", tx: "6, 7, 7", gk: "6", ck: "7" },
+            { id: 5, name: "Bùi Quý Dương", tx: "5, 7, 7", gk: "6", ck: "6" },
+            { id: 6, name: "Đỗ Hồng Dương", tx: "7, 8, 6", gk: "6", ck: "7" }
+        ];
+
+        function login() {
+            guildName = document.getElementById('guild-name').value.trim();
+            if(!guildName) { alert("Vui lòng nhập Bang hội!"); return; }
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'block';
+            document.getElementById('guild-display').innerText = `[ ${guildName.toUpperCase()} ]`;
+            renderTable();
+        }
+
+        function renderTable() {
+            if (currentMode !== 'view') return; // Không vẽ lại bảng nếu đang gõ chữ
+            const tbody = document.getElementById('data-body');
+            tbody.innerHTML = '';
+            
+            dataList.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.id = `row-${row.id}`;
+                tr.onclick = () => selectRow(row.id);
+                tr.innerHTML = `
+                    <td>${row.id}</td>
+                    <td style="text-align:left">${row.name}</td>
+                    <td>${row.tx}</td>
+                    <td>${row.gk}</td>
+                    <td>${row.ck}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function selectRow(id) {
+            if (currentMode !== 'view') return; // Đang sửa/thêm thì khóa chọn dòng khác
+            document.querySelectorAll('tr').forEach(tr => tr.classList.remove('selected'));
+            document.getElementById(`row-${id}`).classList.add('selected');
+            selectedId = id;
+        }
+
+        function showToast(msg, color = 'var(--success)') {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.background = color;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function sendToServer(action, detail) {
+            if(!WEB_APP_URL || WEB_APP_URL.includes("DÁN_LINK")) return;
+            let formData = new FormData();
+            formData.append("bangHoi", guildName);
+            formData.append("action", action);
+            formData.append("detail", detail);
+            fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: formData });
+        }
+
+        // ==========================================
+        // LỆNH SỬA (BIẾN HÀNG THÀNH Ô NHẬP LIỆU)
+        // ==========================================
+        function execEdit() {
+            if (currentMode === 'add') return; // Đang thêm thì không cho sửa
+
+            const btnEdit = document.getElementById('btn-edit');
+
+            if (currentMode === 'view') {
+                if (!selectedId) { showToast("Vui lòng chạm chọn 1 dòng để sửa!", "var(--danger)"); return; }
+                
+                currentMode = 'edit';
+                let row = dataList.find(r => r.id === selectedId);
+                let tr = document.getElementById(`row-${selectedId}`);
+                
+                // Tráo đổi văn bản thành Input Form
+                tr.classList.add('editing');
+                tr.innerHTML = `
+                    <td>${row.id}</td>
+                    <td class="text-left"><input type="text" id="edit-name" value="${row.name}"></td>
+                    <td><input type="text" id="edit-tx" value="${row.tx}"></td>
+                    <td><input type="text" id="edit-gk" value="${row.gk}"></td>
+                    <td><input type="text" id="edit-ck" value="${row.ck}"></td>
+                `;
+                
+                // Đổi nút Sửa thành LƯU
+                btnEdit.classList.add('btn-save');
+                btnEdit.innerHTML = "💾 LƯU<br><span style='font-size:0.75rem; font-weight:400'>Xác nhận sửa</span>";
+                
+                // Tự động focus vào ô Tên để gõ luôn
+                document.getElementById('edit-name').focus();
+
+            } else if (currentMode === 'edit') {
+                // Đã gõ xong -> Lấy dữ liệu và lưu lại
+                let row = dataList.find(r => r.id === selectedId);
+                let oldName = row.name;
+                
+                row.name = document.getElementById('edit-name').value.trim();
+                row.tx = document.getElementById('edit-tx').value.trim();
+                row.gk = document.getElementById('edit-gk').value.trim();
+                row.ck = document.getElementById('edit-ck').value.trim();
+                
+                currentMode = 'view';
+                renderTable(); // Vẽ lại bảng thành văn bản
+                
+                // Hiệu ứng hoàn thành
+                document.getElementById(`row-${selectedId}`).classList.add('updated');
+                showToast("Đã lưu bản ghi vừa sửa!");
+                
+                // Trả nút về như cũ
+                btnEdit.classList.remove('btn-save');
+                btnEdit.innerHTML = "✏️ SỬA<br><span style='font-size:0.75rem; font-weight:400'>Chọn 1 dòng</span>";
+                
+                sendToServer("SỬA", `Cập nhật STT ${selectedId}: ${oldName} -> ${row.name}`);
+                selectedId = null; 
+            }
+        }
+
+        // ==========================================
+        // LỆNH THÊM (CHÈN FORM TRỐNG VÀO CUỐI BẢNG)
+        // ==========================================
+        function execAdd() {
+            if (currentMode === 'edit') return; // Đang sửa thì không cho thêm
+            
+            const btnAdd = document.getElementById('btn-add');
+
+            if (currentMode === 'view') {
+                currentMode = 'add';
+                let tbody = document.getElementById('data-body');
+                
+                // Tính ID mới (Khóa chính tự tăng)
+                let newId = dataList.length > 0 ? Math.max(...dataList.map(r => r.id)) + 1 : 1;
+                
+                let tr = document.createElement('tr');
+                tr.id = "row-add";
+                tr.classList.add('editing');
+                tr.innerHTML = `
+                    <td>${newId}</td>
+                    <td class="text-left"><input type="text" id="add-name" placeholder="Nhập họ tên..." autocomplete="off"></td>
+                    <td><input type="text" id="add-tx" placeholder="TX"></td>
+                    <td><input type="text" id="add-gk" placeholder="GK"></td>
+                    <td><input type="text" id="add-ck" placeholder="CK"></td>
+                `;
+                tbody.appendChild(tr);
+                
+                // Đổi nút Thêm thành LƯU
+                btnAdd.classList.add('btn-save');
+                btnAdd.innerHTML = "💾 LƯU<br><span style='font-size:0.75rem; font-weight:400'>Lưu dòng mới</span>";
+                
+                // Cuộn xuống và focus
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                document.getElementById('add-name').focus();
+
+            } else if (currentMode === 'add') {
+                let newId = dataList.length > 0 ? Math.max(...dataList.map(r => r.id)) + 1 : 1;
+                let name = document.getElementById('add-name').value.trim();
+                let tx = document.getElementById('add-tx').value.trim();
+                let gk = document.getElementById('add-gk').value.trim();
+                let ck = document.getElementById('add-ck').value.trim();
+                
+                if (!name) { showToast("Cảnh báo: Không được để trống Họ và tên!", "var(--danger)"); return; }
+                
+                // Đẩy vào CSDL
+                dataList.push({ id: newId, name: name, tx: tx, gk: gk, ck: ck });
+                
+                currentMode = 'view';
+                renderTable();
+                
+                document.getElementById(`row-${newId}`).classList.add('added');
+                showToast("Đã bổ sung bản ghi mới thành công!");
+                
+                btnAdd.classList.remove('btn-save');
+                btnAdd.innerHTML = "➕ THÊM<br><span style='font-size:0.75rem; font-weight:400'>Bản ghi mới</span>";
+                
+                sendToServer("THÊM", `Đã tạo bản ghi STT ${newId}: ${name} (${tx} | ${gk} | ${ck})`);
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }
+        }
+
+        // ==========================================
+        // LỆNH XÓA (XÓA DÒNG ĐÃ CHỌN)
+        // ==========================================
+        function execDelete() {
+            if (currentMode !== 'view') { showToast("Hãy hoàn tất việc Nhập/Sửa trước khi Xóa!", "var(--danger)"); return; }
+            if (!selectedId) { showToast("Vui lòng chạm chọn 1 dòng để xóa!", "var(--danger)"); return; }
+            
+            let row = dataList.find(r => r.id === selectedId);
+            document.getElementById(`row-${selectedId}`).classList.add('deleted');
+            
+            setTimeout(() => {
+                dataList = dataList.filter(r => r.id !== selectedId);
+                selectedId = null;
+                renderTable(); // Vẽ lại, STT các dòng khác tự động đứng im
+            }, 500);
+
+            showToast(`Đã xóa bản ghi STT ${row.id}`);
+            sendToServer("XÓA", `Đã xóa toàn bộ bản ghi STT ${row.id} (${row.name})`);
+        }
+    </script>
+</body>
+</html>
